@@ -1,0 +1,13 @@
+applications:
+- name: aws-rds-service-broker
+  mem: 256M
+  disk: 1024M
+  instances: 1
+  env:
+    AWS_ACCESS_KEY_ID: fillin
+    AWS_SECRET_ACCESS_KEY: fillin
+  stackato:
+    ignores:
+    - .git
+    - bin
+    - leveldb
