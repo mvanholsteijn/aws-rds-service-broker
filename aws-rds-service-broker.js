@@ -71,11 +71,16 @@ var aws = require('aws-sdk');
 aws.config.region = config.aws.Region;
 var rds = new aws.RDS();
 var iam = new aws.IAM();
+var urlTemplates = {};
 var server = restify.createServer({
     name: 'aws-rds-service-broker'
 });
 
-server.use(apiVersionChecker({ 'major' : 2, 'minor': 4 }));
+
+server.use(apiVersionChecker({
+    'major': 2,
+    'minor': 4
+}));
 server.use(restify.authorizationParser());
 server.use(authenticate(config.credentials));
 server.use(restify.fullResponse());
@@ -83,37 +88,46 @@ server.use(restify.bodyParser());
 server.pre(restify.pre.userAgentConnection());
 
 
-server.get('/v2/catalog', function(request, response, next) {
-    var catalog = null;
+function compileTemplates() {
+    var i, p, id, str, result = {};
+    for (i = 0; i < config.catalog.services.length; i += 1) {
+        for (p = 0; p < config.catalog.services[i].plans.length; p += 1) {
+            id = config.catalog.services[i].plans[p].id;
+            str = config.plans[id].urlTemplate;
+            result[id] = Handlebars.compile(str);
+        }
+    }
+    return result;
+}
 
-    function checkConsistency() {
-        var i, p, msg, plans;
+function checkConsistency() {
+    var i, id, p, msg, plans, catalog;
 
-        try {
-            catalog = config.catalog;
-            plans = config.plans;
+    catalog = config.catalog;
+    plans = config.plans;
 
-            for (i = 0; i < catalog.services.length; i += 1) {
-                for (p = 0; p < catalog.services[i].plans.length; p += 1) {
-                    if (!plans.hasOwnProperty(catalog.services[i].plans[p].id)) {
-                        msg = "ERROR: plan '" + catalog.services[i].plans[p].name + "' of service '" + catalog.services[i].name + "' is missing a specification.";
-                    }
+    for (i = 0; i < catalog.services.length; i += 1) {
+        for (p = 0; p < catalog.services[i].plans.length; p += 1) {
+            id = catalog.services[i].plans[p].id;
+            if (!plans.hasOwnProperty(id)) {
+                msg = "ERROR: plan '" + catalog.services[i].plans[p].name + "' of service '" + catalog.services[i].name + "' is missing a specification.";
+                throw new Error(msg);
+            } else {
+                if (!plans[id].hasOwnProperty("parameters")) {
+                    msg = "ERROR: plan '" + catalog.services[i].plans[p].name + "' of service '" + catalog.services[i].name + "' is missing a RDS parameters.";
+                    throw new Error(msg);
                 }
-            }
-        } catch (err) {
-            console.log(err, err.stack);
-            msg = err;
-        } finally {
-            if (msg) {
-                response.send(500, {
-                    'description': msg
-                });
-                next();
+
+                if (!plans[id].hasOwnProperty("urlTemplate")) {
+                    msg = "ERROR: plan '" + catalog.services[i].plans[p].name + "' of service '" + catalog.services[i].name + "' is missing an URL template.";
+                    throw new Error(msg);
+                }
             }
         }
     }
+}
 
-    checkConsistency();
+server.get('/v2/catalog', function(request, response, next) {
     response.send(config.catalog);
     next();
 });
@@ -176,7 +190,27 @@ server.del('/v2/service_instances/:id', function(req, response, next) {
 server.get('/v2/service_instances', function(request, response, next) {
     getAllDbInstances(new DbInstanceNoFilter(), function(err, allDatabaseInstances) {
         if (!err) {
-            response.send(allDatabaseInstances);
+            async.map(allDatabaseInstances, function(instance, callback) {
+                    var result = {};
+                    result.id = getInstanceId(instance);
+                    result.service_id = getServiceId(instance);
+                    result.plan_id = getPlanId(instance);
+                    result.organization_guid = getOrgId(instance);
+                    result.space_guid = getSpaceId(instance);
+                    result.db_instance_id = instance.DBInstanceIdentifier;
+                    result.credentials = getCredentials(instance, result.plan_id);
+
+                    callback(null, result);
+                },
+                function(err, result) {
+                    if (err) {
+                        response.send(500, {
+                            'description': err
+                        });
+                    } else {
+                        response.send(result);
+                    }
+                });
         } else {
             response.send(500, err);
         }
@@ -196,17 +230,7 @@ server.put('/v2/service_instances/:instance_id/service_bindings/:id', function(r
             if (allDatabaseInstances && allDatabaseInstances.length > 0) {
                 instance = allDatabaseInstances[0];
                 if (instance && instance.Endpoint) {
-                    reply.credentials = {
-                        'host': instance.Endpoint.Address,
-                        'username': instance.MasterUsername,
-                        'port': instance.Endpoint.Port
-                    };
-                    for (i = 0; i < instance.TagList.length; i += 1) {
-                        tag = instance.TagList[i];
-                        if (tag.Key === 'CF-AWS-PASSWORD') {
-                            reply.credentials.password = tag.Value;
-                        }
-                    }
+                    reply.credentials = getCredentials(instance, getPlanId(instance));
                     response.send(reply);
                 } else {
                     response.send(500, {
@@ -243,6 +267,57 @@ function generatePassword(passwordLength) {
     }
 
     return result;
+}
+
+function getTagValue(instance, key) {
+    var i, tag;
+    for (i = 0; i < instance.TagList.length; i += 1) {
+        tag = instance.TagList[i];
+        if (tag.Key === key) {
+            return tag.Value;
+        }
+    }
+    return undefined;
+}
+
+function getServiceId(instance) {
+    return getTagValue(instance, 'CF-AWS-RDS-SERVICE-ID');
+}
+
+function getPlanId(instance) {
+    return getTagValue(instance, 'CF-AWS-RDS-PLAN-ID');
+}
+
+function getOrgId(instance) {
+    return getTagValue(instance, 'CF-AWS-RDS-ORG-ID');
+}
+
+function getSpaceId(instance) {
+    return getTagValue(instance, 'CF-AWS-RDS-SPACE-ID');
+}
+
+function getPassword(instance) {
+    var result = getTagValue(instance, 'CF-AWS-RDS-PASSWORD');
+    if (!result) {
+        result = getTagValue(instance, 'CF-AWS-PASSWORD');
+    }
+    return result;
+}
+
+function getInstanceId(instance) {
+    return getTagValue(instance, 'CF-AWS-RDS-INSTANCE-ID');
+}
+
+function getCredentials(instance, plan_id) {
+    var credentials = {
+        'host': instance.Endpoint.Address,
+        'username': instance.MasterUsername,
+        'port': instance.Endpoint.Port,
+        'password': getPassword(instance)
+    };
+    credentials.uri = urlTemplates[plan_id](credentials);
+    credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
+    return credentials;
 }
 
 
@@ -343,6 +418,7 @@ function DbInstanceIdFilter(id) {
     };
 }
 
+
 // filter to select all of the  dbinstances
 function DbInstanceNoFilter() {
     this.filter = function(dbinstances, callback) {
@@ -419,7 +495,7 @@ function createRds(request, response, next, plan) {
     var reply = {},
         params = null;
 
-    params = JSON.parse(JSON.stringify(plan));
+    params = JSON.parse(JSON.stringify(plan.parameters));
     params.DBInstanceIdentifier = generateInstanceId(plan.DBInstanceIdentifier);
     params.MasterUserPassword = generatePassword(12);
     params.DBSubnetGroupName = config.aws.DBSubnetGroupName;
@@ -511,6 +587,9 @@ server.get(/\/?.*/, restify.serveStatic({
     directory: './public',
     default: 'index.html'
 }));
+
+checkConsistency();
+urlTemplates = compileTemplates();
 
 server.listen(5001, function() {
     console.log('%s listening at %s', server.name, server.url)

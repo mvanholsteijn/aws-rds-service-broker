@@ -79,54 +79,66 @@
   },
   "plans": {
     "49974401-BB86-446E-975C-9BDA0B93D444": {
-      "DBInstanceIdentifier": "cfdb",
-      "AllocatedStorage": 5,
-      "DBInstanceClass": "db.t2.micro",
-      "Engine": "MySQL",
-      "MasterUsername": "root",
-      "AutoMinorVersionUpgrade": true,
-      "BackupRetentionPeriod": 5,
-      "DBName": "mydb",
-      "StorageType": "gp2",
-      "PubliclyAccessible": false
+      "parameters" : {
+        "DBInstanceIdentifier": "cfdb",
+        "AllocatedStorage": 5,
+        "DBInstanceClass": "db.t2.micro",
+        "Engine": "MySQL",
+        "MasterUsername": "root",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 5,
+        "DBName": "mydb",
+        "StorageType": "gp2",
+        "PubliclyAccessible": false
+      },
+      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{database}}?user={{username}}&password={{password}}"
     },
     "D4AA6ECE-C79A-43E7-B04B-3B9B7F9F7790": {
-      "DBInstanceIdentifier": "cfdb",
-      "AllocatedStorage": 10,
-      "DBInstanceClass": "db.t2.micro",
-      "Engine": "MySQL",
-      "MasterUsername": "root",
-      "AutoMinorVersionUpgrade": true,
-      "BackupRetentionPeriod": 5,
-      "DBName": "mydb",
-      "PubliclyAccessible": false,
-      "StorageType": "gp2",
-      "MultiAZ": true
+      "parameters" : {
+        "DBInstanceIdentifier": "cfdb",
+        "AllocatedStorage": 10,
+        "DBInstanceClass": "db.t2.micro",
+        "Engine": "MySQL",
+        "MasterUsername": "root",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 5,
+        "DBName": "mydb",
+        "PubliclyAccessible": false,
+        "StorageType": "gp2",
+        "MultiAZ": true
+      },
+      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{database}}?user={{username}}&password={{password}}"
     },
     "AC9998F9-88D4-4330-8BBD-18BCDF9DEA02": {
-      "DBInstanceIdentifier": "cfdb",
-      "AllocatedStorage": 5,
-      "DBInstanceClass": "db.t2.micro",
-      "Engine": "postgres",
-      "MasterUsername": "root",
-      "AutoMinorVersionUpgrade": true,
-      "BackupRetentionPeriod": 5,
-      "DBName": "mydb",
-      "StorageType": "gp2",
-      "PubliclyAccessible": false
-    },
+      "parameters" : {
+        "DBInstanceIdentifier": "cfdb",
+        "AllocatedStorage": 5,
+        "DBInstanceClass": "db.t2.micro",
+        "Engine": "postgres",
+        "MasterUsername": "root",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 5,
+        "DBName": "mydb",
+        "StorageType": "gp2",
+        "PubliclyAccessible": false
+      },
+      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{database}}?user={{username}}&password={{password}}"
+  },
     "0101DAEC-A8B4-4A83-A464-D667D47A4E7F": {
-      "DBInstanceIdentifier": "cfdb",
-      "AllocatedStorage": 10,
-      "DBInstanceClass": "db.t2.micro",
-      "Engine": "postgres",
-      "MasterUsername": "root",
-      "AutoMinorVersionUpgrade": true,
-      "BackupRetentionPeriod": 5,
-      "DBName": "mydb",
-      "PubliclyAccessible": false,
-      "StorageType": "gp2",
-      "MultiAZ": true
+      "parameters" : {
+        "DBInstanceIdentifier": "cfdb",
+        "AllocatedStorage": 10,
+        "DBInstanceClass": "db.t2.micro",
+        "Engine": "postgres",
+        "MasterUsername": "root",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 5,
+        "DBName": "mydb",
+        "PubliclyAccessible": false,
+        "StorageType": "gp2",
+        "MultiAZ": true
+      },
+      "urlTemplate": "postgresql://{{host}}:{{port}}/{{database}}?user={{username}}&password={{password}}"
     }
   }
 }
