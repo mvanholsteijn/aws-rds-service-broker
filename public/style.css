@@ -1,0 +1,13 @@
+table, td, th
+{
+	border:1px solid lavender;
+}
+th
+{
+	background-color:purple;
+	color:white;
+}
+td 
+{
+	text-align:left;
+}

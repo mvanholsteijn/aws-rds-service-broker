@@ -1,14 +1,73 @@
 /**
- * Created by mark on 02/02/15.
+ * Created by Mark van Holsteijn, Xebia Nederland B.V.
+ *
+ * <h2>AWS RDS Service Broker</h2>
+ * An Cloud Foundry Service Broker, complying to version 2.4 of the interface specification
+ * http://docs.cloudfoundry.org/services/api.html
+ *
+ * provision: The service broker will create a Amazon RDS database instance, parameters and password stored as tag with
+ *              the instance
+ * bind: search for the specified service instance with a matching tag and return the credentials.
+ * unbind: does nothing.
+ * deprovision: search for the specified service instance with matching tag and deletes it.
+ *
+ * The bind and unbind does not keep any registration. The service broker is stateless as it  does not store any
+ * information on the local file system and is stateless.
+ *
+ * The catalog of services and plans is stored in the config subdirectory under the name aws-rds-service-broker.js.
+ *
+ *  * <h2> DB Instance names </h2>
+ * You can add new plans, by adding plan in a existing config.catalog.services entry.
+ * You can also add new services, by adding a service definition to the catalog (for instance an Oracle DB service).
+ * When you add a new plan, you must also also add a matching set of parameters for the creation of an instance
+ * in the config.plans. For instance:
+ *
+ * "<your-plan-uuid>": {
+      "DBInstanceIdentifier": "cfdb",
+      "AllocatedStorage": 10,
+      "DBInstanceClass": "db.t2.micro",
+      "Engine": "MySQL",
+      "MasterUsername": "root",
+      "AutoMinorVersionUpgrade": true,
+      "BackupRetentionPeriod": 5,
+      "DBName": "mydb",
+      "PubliclyAccessible": false,
+      "StorageType": "gp2",
+      "MultiAZ": true
+    }
+ *
+ * You can configure the instance you want to create by adding parameters as defined in the SDK.
+ * See http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/RDS.html#createDBInstance-property)
+ *
+ * <h2> DB Instance names </h2>
+ * The 'DBInstanceIdentifier' is used a a prefix to generate a new dbinstance name. The suffix will be a dash, followed
+ * by the timestamp of creation as a hexadecimal string.
+ *
+ * <h2>Region and database subnet groups</h2>
+ * The Region and subnet group to create the instances in is defined in the config.aws section.
+ * "aws": {
+    "Region": "eu-central-1",
+    "DBSubnetGroupName": "stackato-db-subnet-group"
+  }
+ * you must have created the DBSubnetGroup.
+ *
+ * <h2>security</h2>
+ * when you create a broker, you need to specify the user name and password to use. You can specify the
+ * credentials in config.credentials.
+ *
+ *  "credentials": {
+    "authUser": "demouser",
+    "authPassword": "demopassword"
+  }
  */
 
 'use strict';
 
-var config = require('./config/aws-rds-service-broker');
-var Handlebars = require('handlebars');
-var async = require('async');
-var aws = require('aws-sdk');
 var restify = require('restify');
+var async = require('async');
+var Handlebars = require('handlebars');
+var config = require('./config/aws-rds-service-broker');
+var aws = require('aws-sdk');
 aws.config.region = config.aws.Region;
 var rds = new aws.RDS();
 var iam = new aws.IAM();
@@ -16,13 +75,12 @@ var server = restify.createServer({
     name: 'aws-rds-service-broker'
 });
 
-server.use(apiVersionChecker("2.3"));
+server.use(apiVersionChecker({ 'major' : 2, 'minor': 4 }));
 server.use(restify.authorizationParser());
 server.use(authenticate(config.credentials));
 server.use(restify.fullResponse());
 server.use(restify.bodyParser());
 server.pre(restify.pre.userAgentConnection());
-
 
 
 server.get('/v2/catalog', function(request, response, next) {
@@ -418,16 +476,15 @@ function apiVersionChecker(version) {
     var header = 'x-broker-api-version';
     console.log(version);
     return function(request, response, next) {
-        console.log("version checker");
-        if (!request.headers[header]) {
-            console.log(header + ' is missing from the request');
-        } else {
+        if (request.headers[header]) {
             var pattern = new RegExp('^' + version.major + '\\.\\d+$');
             if (!request.headers[header].match(pattern)) {
                 console.log('Incompatible services API version: ' + request.headers[header]);
                 response.status(412);
                 response.end();
             }
+        } else {
+            console.log(header + ' is missing from the request');
         }
         next();
     };
@@ -436,20 +493,24 @@ function apiVersionChecker(version) {
 function authenticate(credentials) {
     return function(request, response, next) {
         if (credentials.authUser || credentials.authPassword) {
-            if (request.authorization && request.authorization.basic && request.authorization.basic.username === credentials.authUser && request.authorization.basic.password === credentials.authPassword) {
-                return next();
-            } else {
-                console.log('Error: authorization denied');
+            if (!(request.authorization && request.authorization.basic && request.authorization.basic.username === credentials.authUser && request.authorization.basic.password === credentials.authPassword)) {
                 response.status(401);
-                response.setHeader('Connection', 'close');
+                response.setHeader('WWW-Authenticate', 'Basic "realm"="aws-rds-service-broker"');
                 response.end();
-                return next(new restify.NotAuthorizedError());
+            } else {
+                // authenticated!
             }
         } else {
-            return next();
+            // no authentication required.
         }
+        next();
     };
 };
+
+server.get(/\/?.*/, restify.serveStatic({
+    directory: './public',
+    default: 'index.html'
+}));
 
 server.listen(5001, function() {
     console.log('%s listening at %s', server.name, server.url)

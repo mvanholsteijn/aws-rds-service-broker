@@ -1,0 +1,29 @@
+<!doctype html>
+<html ng-app>
+	<head>
+		<title>Catalog</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.16/angular.min.js"></script>
+		<script src="catalog-controller.js"></script>
+		<link rel="stylesheet" type="text/css" href="style.css">
+	</head>
+
+	<body>
+		<div ng-controller="CatalogController">
+		   <table>
+                <tr>
+                    <th>service name</th>
+                    <th>plan name</th>
+                    <th>description</th>
+                    <th colspan="2">service</th>
+                </tr>
+               <tr ng-repeat="sp in plans">
+                   <td>{{sp.service.name}}</td>
+                   <td>{{sp.plan.name}}</td>
+                   <td>{{sp.plan.description}}</td>
+                   <td>{{sp.service.description}}</td>
+                   <td>{{sp.service.version}}</td>
+               </tr>
+           </table>
+		</div>
+    	</body>
+</html>
