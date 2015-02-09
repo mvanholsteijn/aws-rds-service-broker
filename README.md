@@ -25,47 +25,21 @@ credentials in the config.
 ```
 The default is set to demouser + demopassword. best changed :-)
 
-## Adding service broker services and plans
-You can add new plans, by adding plan in a existing services config.  You can also add new services, by adding a service definition to the catalog (for instance an Oracle DB service) and at least one plan.
-
-When you add a new plan, you must also also add a matching set of parameters for the creation of an instance
-in the config plans. For instance:
-```json
-  "<your-uuid>": {
-      "parameters" : {
-        "DBInstanceIdentifier": "cfdb",
-        "AllocatedStorage": 5,
-        "DBInstanceClass": "db.t2.micro",
-        "Engine": "MySQL",
-        "MasterUsername": "root",
-        "AutoMinorVersionUpgrade": true,
-        "BackupRetentionPeriod": 5,
-        "DBName": "mydb",
-        "StorageType": "gp2",
-        "PubliclyAccessible": false
-      },
-      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{database}}?user={{username}}&password={{password}}"
-```
-You can configure a plan by setting parameters as defined in the SDK.
-See http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/RDS.html#createDBInstance-property.
-
-## DB Instance names
-The 'DBInstanceIdentifier' is used a a prefix to generate a new dbinstance name. The suffix will be a dash, followed
-by the timestamp of creation as a hexadecimal string.
-
 ## AWS Region and database subnet groups
-The Region and subnet group to create the instances in is defined in the config.aws section.
+You must specify the Region and subnet group where the database instances should be created in the 'aws' section of the configuration.
+The DBSubnetGroup must be created before the broker is started.
+
 ```json
 "aws": {
     "Region": "eu-central-1",
     "DBSubnetGroupName": "stackato-db-subnet-group"
   }
 ```
-you must have created the DBSubnetGroup.
 
 ## AWS Access keys
 Access to your AWS Acccount is obtained by specifying the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as
 environment variables. It is best to create a separate user for the service broker. 
+
 
 ## Required AWS Permissions
 The service broker requires the following IAM permissions:
@@ -99,3 +73,32 @@ The service broker requires the following IAM permissions:
   ]
 }
 ```
+
+## Adding service broker services and plans
+You can add new plans to an existing service, or you can add a completely new service definition to the configuration (for instance an Oracle DB service).
+
+When you add a new plan, you must also also add a matching set of parameters for the creation of an instance
+in the plans element of the configuration. For instance:
+```json
+  "<your-uuid>": {
+      "parameters" : {
+        "DBInstanceIdentifier": "cfdb",
+        "AllocatedStorage": 100,
+        "DBInstanceClass": "db.t2.micro",
+        "Engine": "MySQL",
+        "MasterUsername": "root",
+        "AutoMinorVersionUpgrade": true,
+        "BackupRetentionPeriod": 5,
+        "DBName": "mydb",
+        "StorageType": "gp2",
+        "PubliclyAccessible": false
+      },
+      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{database}}?user={{username}}&password={{password}}"
+```
+You can use any of the  parameters as defined in the SDK for the createDBInstance method.
+See http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/RDS.html#createDBInstance-property.
+
+## DB Instance names
+The 'DBInstanceIdentifier' is used a a prefix to generate a new dbinstance name. The suffix will be a dash, followed
+by the timestamp of creation as a hexadecimal string.
+
