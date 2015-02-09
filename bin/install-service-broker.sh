@@ -4,8 +4,8 @@
 function getRoutesUrl() {
 	[ -z "$1" ] && echo ERROR: missing application name >&2 &&  exit 1
 
-        stackato curl /v2/apps | grep -v ^SSL | \
-		jq ' .resources[] | select(.entity.name=="aws-rds-service-broker") | .entity | .entity.routes_url'
+        stackato curl GET /v2/apps | grep -v ^SSL | \
+		jq -r " .resources[] | select(.entity.name==\"$1\") | .entity.routes_url"
 }
 
 
@@ -39,6 +39,9 @@ function getFirstRoute() {
 	echo $HOSTNAME.$DOMAIN
 }
 
+function getPlanName() {
+    jq -r ".catalog.services[] | select(.name==\"$2\") | .plans[] | select(.id==\"$3\") | .name" config/$1.json 
+}
 function makeAllPlansPublic() {
 	SERVICES=$(jq -r ".catalog.services[] | .name"  config/$1.json)
 	if [ -n "$SERVICES" ] ; then
@@ -47,18 +50,20 @@ function makeAllPlansPublic() {
 			if [ -n "$PLANS" ] ; then
 				for PLAN in $PLANS ; do 
 						SERVICEPLAN_URL=$(getServicePlanUrlForUuid $PLAN)
+						PLAN_NAME=$(getPlanName $1 $SERVICE $PLAN)
 						if [ -n "$SERVICEPLAN_URL" ] ; then
-							stackato curl PUT $SERVICEPLAN_URL -d '{"public" : true }'
+							echo "INFO: making plan '$PLAN_NAME' of service '$SERVICE' public" >&2
+							stackato curl PUT $SERVICEPLAN_URL -d '{"public" : true }' > /dev/null
 						else
-							echo "WARN: plan '$PLAN' of service '$SERVICE' is not registered." 2>&1
+							echo "ERROR: plan '$PLAN_NAME' of service '$SERVICE' is not registered." >&2
 						fi
 				done
 			else
-				echo "WARN: no plans found for service $SERVICE in config/$1.json" 2>&1
+				echo "WARN: no plans found for service $SERVICE in config/$1.json" >&2
 			fi
 		done
 	else
-		echo "WARN: No services defined in config/$1.json" 2>&1
+		echo "WARN: No services defined in config/$1.json" >&2
 	fi
 }
 
@@ -66,8 +71,19 @@ function checkServiceBroker() {
   stackato curl GET /v2/service_brokers | grep -v ^SSL | jq  -r ".resources[] | select(.entity.name==\"$1\") | .entity.name"
 }
 
+function checkAppExists() {
+	stackato curl GET /v2/apps | grep -v ^SSL | \
+	            jq -r " .resources[] | select(.entity.name==\"$1\") | .entity.name"
+}
 function installServiceBroker() {
-	stackato push --as $1
+
+	EXISTS=$(checkAppExists $1)
+	if [ -z "$EXISTS" ] ; then
+		stackato push $1
+	else
+		echo "WARN: $1 is already deployed. to update, just push!"
+	fi
+
 	USER=$(jq -r ".credentials.authUser" config/$1.json )
 	PWD=$(jq -r ".credentials.authPassword" config/$1.json)
 
@@ -75,7 +91,7 @@ function installServiceBroker() {
 		stackato create-service-broker \
 			--username $USER \
 			--password $PWD \
-			--url $(getFirstRoute) \
+			--url http://$(getFirstRoute $1) \
 			$1
 	else
 		echo "WARN: a service broker named '$1' already exists." >&2
