@@ -10,6 +10,8 @@ http://docs.cloudfoundry.org/services/api.html
 The bind and unbind does not keep any registration. The service broker is stateless as it  does not store any
 information on the local file system and is stateless. This means you can deploy multiple instances of the broker for HA purposes.
 
+This service broker was tested on Stackato.
+
 ## config
 The catalog of services and plans is defined in the file config/aws-rds-service-broker.json.
 
