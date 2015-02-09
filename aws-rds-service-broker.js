@@ -1,66 +1,21 @@
 /**
  * Created by Mark van Holsteijn, Xebia Nederland B.V.
  *
- * <h2>AWS RDS Service Broker</h2>
  * An Cloud Foundry Service Broker, complying to version 2.4 of the interface specification
  * http://docs.cloudfoundry.org/services/api.html
  *
+ * It implements the following methods:
  * provision: The service broker will create a Amazon RDS database instance, parameters and password stored as tag with
  *              the instance
  * bind: search for the specified service instance with a matching tag and return the credentials.
- * unbind: does nothing.
  * deprovision: search for the specified service instance with matching tag and deletes it.
  *
- * The bind and unbind does not keep any registration. The service broker is stateless as it  does not store any
- * information on the local file system and is stateless.
+ * The bind does not keep any registration. The service broker is stateless: all information is stored in AWS. 
  *
- * The catalog of services and plans is stored in the config subdirectory under the name aws-rds-service-broker.js.
+ * The catalog of services and plans is stored in the config/aws-rds-service-broker.json.
  *
- *  * <h2> DB Instance names </h2>
- * You can add new plans, by adding plan in a existing config.catalog.services entry.
- * You can also add new services, by adding a service definition to the catalog (for instance an Oracle DB service).
- * When you add a new plan, you must also also add a matching set of parameters for the creation of an instance
- * in the config.plans. For instance:
- *
- * "<your-plan-uuid>": {
-      "DBInstanceIdentifier": "cfdb",
-      "AllocatedStorage": 10,
-      "DBInstanceClass": "db.t2.micro",
-      "Engine": "MySQL",
-      "MasterUsername": "root",
-      "AutoMinorVersionUpgrade": true,
-      "BackupRetentionPeriod": 5,
-      "DBName": "mydb",
-      "PubliclyAccessible": false,
-      "StorageType": "gp2",
-      "MultiAZ": true
-    }
- *
- * You can configure the instance you want to create by adding parameters as defined in the SDK.
- * See http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/RDS.html#createDBInstance-property)
- *
- * <h2> DB Instance names </h2>
- * The 'DBInstanceIdentifier' is used a a prefix to generate a new dbinstance name. The suffix will be a dash, followed
- * by the timestamp of creation as a hexadecimal string.
- *
- * <h2>Region and database subnet groups</h2>
- * The Region and subnet group to create the instances in is defined in the config.aws section.
- * "aws": {
-    "Region": "eu-central-1",
-    "DBSubnetGroupName": "stackato-db-subnet-group"
-  }
- * you must have created the DBSubnetGroup.
- *
- * <h2>security</h2>
- * when you create a broker, you need to specify the user name and password to use. You can specify the
- * credentials in config.credentials.
- *
- *  "credentials": {
-    "authUser": "demouser",
-    "authPassword": "demopassword"
-  }
+ * For more information, check the README.md
  */
-
 'use strict';
 
 var restify = require('restify');
@@ -591,6 +546,7 @@ server.get(/\/?.*/, restify.serveStatic({
 checkConsistency();
 urlTemplates = compileTemplates();
 
-server.listen(5001, function() {
+var port = Number(process.env.VCAP_APP_PORT || 5001);
+server.listen(port, function() {
     console.log('%s listening at %s', server.name, server.url)
 });
