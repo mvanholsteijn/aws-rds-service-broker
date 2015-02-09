@@ -91,7 +91,7 @@
         "StorageType": "gp2",
         "PubliclyAccessible": false
       },
-      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{name}}"
+      "urlTemplate" :  "mysql://{{username}}:{{password}}@{{host}}:{{port}}/{{name}}"
     },
     "D4AA6ECE-C79A-43E7-B04B-3B9B7F9F7790": {
       "parameters" : {
@@ -107,7 +107,7 @@
         "StorageType": "gp2",
         "MultiAZ": true
       },
-      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{name}}"
+      "urlTemplate" :  "mysql://{{username}}:{{password}}@{{host}}:{{port}}/{{name}}"
     },
     "AC9998F9-88D4-4330-8BBD-18BCDF9DEA02": {
       "parameters" : {
@@ -122,7 +122,7 @@
         "StorageType": "gp2",
         "PubliclyAccessible": false
       },
-      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{name}}"
+      "urlTemplate" :  "mysql://{{username}}:{{password}}@{{host}}:{{port}}/{{name}}"
   },
     "0101DAEC-A8B4-4A83-A464-D667D47A4E7F": {
       "parameters" : {
@@ -138,7 +138,7 @@
         "StorageType": "gp2",
         "MultiAZ": true
       },
-      "urlTemplate" :  "mysql://{{host}}:{{port}}/{{name}}"
+      "urlTemplate" :  "mysql://{{username}}:{{password}}@{{host}}:{{port}}/{{name}}"
     }
   }
 }

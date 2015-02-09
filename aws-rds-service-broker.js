@@ -265,13 +265,13 @@ function getInstanceId(instance) {
 
 function getCredentials(instance, plan_id) {
     var credentials = {
-        'host': instance.Endpoint.Address,
+        'name': instance.DBName,
         'hostname': instance.Endpoint.Address,
-        'username': instance.MasterUsername,
-        'user': instance.MasterUsername,
+        'host': instance.Endpoint.Address,
         'port': instance.Endpoint.Port,
-        'password': getPassword(instance),
-        'name': instance.DBName
+        'user': instance.MasterUsername,
+        'username': instance.MasterUsername,
+        'password': getPassword(instance)
     };
     credentials.uri = urlTemplates[plan_id](credentials);
     credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
