@@ -3,7 +3,9 @@
 
 function getRoutesUrl() {
 	[ -z "$1" ] && echo ERROR: missing application name >&2 &&  exit 1
-	stackato app $1 --json | grep -v ^SSL |  jq -r '.entity.routes_url'
+
+        stackato curl /v2/apps | grep -v ^SSL | \
+		jq ' .resources[] | select(.entity.name=="aws-rds-service-broker") | .entity | .entity.routes_url'
 }
 
 
