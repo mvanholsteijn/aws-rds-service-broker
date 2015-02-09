@@ -188,8 +188,8 @@ server.put('/v2/service_instances/:instance_id/service_bindings/:id', function(r
                     reply.credentials = getCredentials(instance, getPlanId(instance));
                     response.send(reply);
                 } else {
-                    response.send(500, {
-                        'description': "No endpoint set on the instance '" + instance.DBInstanceIdentifier + "'. The instance is in state '" + instance.DBInstanceStatus + "'."
+                    response.send(503, {
+                        'description': "No endpoint set on the instance '" + instance.DBInstanceIdentifier + "'. The instance is in state '" + instance.DBInstanceStatus + "'. please retry a few minutes later"
                     });
                 }
             } else {
@@ -266,9 +266,12 @@ function getInstanceId(instance) {
 function getCredentials(instance, plan_id) {
     var credentials = {
         'host': instance.Endpoint.Address,
+        'hostname': instance.Endpoint.Address,
         'username': instance.MasterUsername,
+        'user': instance.MasterUsername,
         'port': instance.Endpoint.Port,
-        'password': getPassword(instance)
+        'password': getPassword(instance),
+        'name': instance.DBName
     };
     credentials.uri = urlTemplates[plan_id](credentials);
     credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
@@ -303,11 +306,13 @@ function getAllDbInstances(filter, functionCallback) {
             // Get AwsAccountId and RdsArnPrefix
             function(callback) {
                 iam.getUser({}, function(err, data) {
-                    var user = data.User,
+                    var user,
                         colon = new RegExp(":");
                     if (err) {
+			console.log(err, err.stack);
                         callback(err, []);
                     } else {
+                        user = data.User;
                         AwsAccountId = user.Arn.split(colon)[4];
                         RdsArnPrefix = 'arn:aws:rds:' + config.aws.Region + ':' + AwsAccountId + ':db:';
                         callback(null, user);
@@ -433,7 +438,11 @@ function DbInstanceParameterFilter(params) {
 
 
 function generateInstanceId(prefix) {
-    return prefix.concat('-').concat((Math.floor(Date.now() / 100).toString(16)));
+    if(prefix) {
+        return prefix.concat('-').concat((Math.floor(Date.now() / 100).toString(16)));
+    } else {
+        throw new Error("DBInstanceIdentifier is missing. please check plan");
+    }
 }
 
 function createDashboardUrl(params) {
@@ -451,7 +460,7 @@ function createRds(request, response, next, plan) {
         params = null;
 
     params = JSON.parse(JSON.stringify(plan.parameters));
-    params.DBInstanceIdentifier = generateInstanceId(plan.DBInstanceIdentifier);
+    params.DBInstanceIdentifier = generateInstanceId(params.DBInstanceIdentifier);
     params.MasterUserPassword = generatePassword(12);
     params.DBSubnetGroupName = config.aws.DBSubnetGroupName;
 
@@ -542,6 +551,12 @@ server.get(/\/?.*/, restify.serveStatic({
     directory: './public',
     default: 'index.html'
 }));
+
+/** According to the spec, the JSON return message should include a description field. */
+server.on('uncaughtException', function (req, res, route, err) {
+  console.log(err, err.stack);
+  res.send(500, { 'code' : 500, 'description' : err.message});
+});
 
 checkConsistency();
 urlTemplates = compileTemplates();
