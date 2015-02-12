@@ -1,6 +1,6 @@
 # AWS RDS Service Broker
 A configurable Cloud Foundry Service Broker, complying to version 2.4 of the interface specification
-http://docs.cloudfoundry.org/services/api.html
+:quy
 
 * provision: The service broker will create a Amazon RDS database instance, parameters and password stored as tag with the instance
 * bind: search for the specified service instance with a matching tag and return the credentials.

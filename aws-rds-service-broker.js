@@ -153,7 +153,9 @@ server.get('/v2/service_instances', function(request, response, next) {
                     result.organization_guid = getOrgId(instance);
                     result.space_guid = getSpaceId(instance);
                     result.db_instance_id = instance.DBInstanceIdentifier;
-                    result.credentials = getCredentials(instance, result.plan_id);
+		    if(instance && instance.Endpoint) {
+			    result.credentials = getCredentials(instance, result.plan_id);
+		    }
 
                     callback(null, result);
                 },
@@ -264,17 +266,28 @@ function getInstanceId(instance) {
 }
 
 function getCredentials(instance, plan_id) {
-    var credentials = {
+    var credentials, hostname, port;
+   
+    if (instance.Endpoint) {
+	hostname = instance.Endpoint.Address;
+	port = instance.Endpoint.Port;
+    }
+
+    credentials = {
         'name': instance.DBName,
-        'hostname': instance.Endpoint.Address,
-        'host': instance.Endpoint.Address,
-        'port': instance.Endpoint.Port,
+        'hostname': hostname,
+        'host': hostname,
+        'port': port,
         'user': instance.MasterUsername,
         'username': instance.MasterUsername,
         'password': getPassword(instance)
     };
-    credentials.uri = urlTemplates[plan_id](credentials);
-    credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
+
+    if (instance.Endpoint) {
+	credentials.uri = urlTemplates[plan_id](credentials);
+	credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
+    }
+
     return credentials;
 }
 
