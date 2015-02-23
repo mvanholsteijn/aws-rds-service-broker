@@ -12,11 +12,11 @@
       {
         "id": "34D6B053-D7EB-46FF-ABC5-B3DFB5D02759",
         "bindable": true,
-        "name": "mysql-aws",
+        "name": "mysql",
         "version": "1.0",
         "description": "MySQL RDS service",
         "metadata": {
-          "providerDisplayName": "Xebia Nederland B.V.",
+          "providerDisplayName": "AWSRDS",
           "tags": [
             "AWS",
             "MySQL",
@@ -43,11 +43,11 @@
       {
         "id": "97A401C9-F07F-4CB6-A013-DC3DBC5B2A00",
         "bindable": true,
-        "name": "pg-aws",
+        "name": "postgres",
         "version": "1.0",
         "description": "Postgres RDS service",
         "metadata": {
-          "providerDisplayName": "Xebia Nederland B.V.",
+          "providerDisplayName": "AWSRDS",
           "tags": [
             "AWS",
             "Postgres",
