@@ -547,9 +547,9 @@ function authenticate(credentials) {
     return function(request, response, next) {
         if (credentials.authUser || credentials.authPassword) {
             if (!(request.authorization && request.authorization.basic && request.authorization.basic.username === credentials.authUser && request.authorization.basic.password === credentials.authPassword)) {
-                response.status(401);
-                response.setHeader('WWW-Authenticate', 'Basic "realm"="aws-rds-service-broker"');
-                response.end();
+		response.status(401);
+                response.setHeader('WWW-Authenticate', 'Basic "realm"="' + server.name +'"');
+		next(new restify.InvalidCredentialsError("invalid username or password"));
             } else {
                 // authenticated!
             }
