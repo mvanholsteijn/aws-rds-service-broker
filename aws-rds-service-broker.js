@@ -10,7 +10,7 @@
  * bind: search for the specified service instance with a matching tag and return the credentials.
  * deprovision: search for the specified service instance with matching tag and deletes it.
  *
- * The bind does not keep any registration. The service broker is stateless: all information is stored in AWS. 
+ * The bind does not keep any registration. The service broker is stateless: all information is stored in AWS.
  *
  * The catalog of services and plans is stored in the config/aws-rds-service-broker.json.
  *
@@ -153,9 +153,9 @@ server.get('/v2/service_instances', function(request, response, next) {
                     result.organization_guid = getOrgId(instance);
                     result.space_guid = getSpaceId(instance);
                     result.db_instance_id = instance.DBInstanceIdentifier;
-		    if(instance && instance.Endpoint) {
-			    result.credentials = getCredentials(instance, result.plan_id);
-		    }
+                    if (instance && instance.Endpoint) {
+                        result.credentials = getCredentials(instance, result.plan_id);
+                    }
 
                     callback(null, result);
                 },
@@ -267,10 +267,10 @@ function getInstanceId(instance) {
 
 function getCredentials(instance, plan_id) {
     var credentials, hostname, port;
-   
+
     if (instance.Endpoint) {
-	hostname = instance.Endpoint.Address;
-	port = instance.Endpoint.Port;
+        hostname = instance.Endpoint.Address;
+        port = instance.Endpoint.Port;
     }
 
     credentials = {
@@ -284,8 +284,8 @@ function getCredentials(instance, plan_id) {
     };
 
     if (instance.Endpoint) {
-	credentials.uri = urlTemplates[plan_id](credentials);
-	credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
+        credentials.uri = urlTemplates[plan_id](credentials);
+        credentials.jdbcUrl = "jdbc:".concat(credentials.uri);
     }
 
     return credentials;
@@ -322,7 +322,7 @@ function getAllDbInstances(filter, functionCallback) {
                     var user,
                         colon = new RegExp(":");
                     if (err) {
-			console.log(err, err.stack);
+                        console.log(err, err.stack);
                         callback(err, []);
                     } else {
                         user = data.User;
@@ -451,7 +451,7 @@ function DbInstanceParameterFilter(params) {
 
 
 function generateInstanceId(prefix) {
-    if(prefix) {
+    if (prefix) {
         return prefix.concat('-').concat((Math.floor(Date.now() / 100).toString(16)));
     } else {
         throw new Error("DBInstanceIdentifier is missing. please check plan");
@@ -534,7 +534,7 @@ function apiVersionChecker(version) {
             if (!request.headers[header].match(pattern)) {
                 console.log('Incompatible services API version: ' + request.headers[header]);
                 response.status(412);
-		next(new restify.PreconditionFailedError('Incompatible services API version'));
+                next(new restify.PreconditionFailedError('Incompatible services API version'));
             }
         } else {
             console.log(header + ' is missing from the request');
@@ -547,9 +547,9 @@ function authenticate(credentials) {
     return function(request, response, next) {
         if (credentials.authUser || credentials.authPassword) {
             if (!(request.authorization && request.authorization.basic && request.authorization.basic.username === credentials.authUser && request.authorization.basic.password === credentials.authPassword)) {
-		response.status(401);
-                response.setHeader('WWW-Authenticate', 'Basic "realm"="' + server.name +'"');
-		next(new restify.InvalidCredentialsError("invalid username or password"));
+                response.status(401);
+                response.setHeader('WWW-Authenticate', 'Basic "realm"="' + server.name + '"');
+                next(new restify.InvalidCredentialsError("invalid username or password"));
             } else {
                 // authenticated!
             }
@@ -566,9 +566,12 @@ server.get(/\/?.*/, restify.serveStatic({
 }));
 
 /** According to the spec, the JSON return message should include a description field. */
-server.on('uncaughtException', function (req, res, route, err) {
-  console.log(err, err.stack);
-  res.send(500, { 'code' : 500, 'description' : err.message});
+server.on('uncaughtException', function(req, res, route, err) {
+    console.log(err, err.stack);
+    res.send(500, {
+        'code': 500,
+        'description': err.message
+    });
 });
 
 
@@ -579,4 +582,3 @@ var port = Number(process.env.VCAP_APP_PORT || 5001);
 server.listen(port, function() {
     console.log('%s listening at %s', server.name, server.url)
 });
-
