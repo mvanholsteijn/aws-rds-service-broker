@@ -17,11 +17,11 @@
  * For more information, check the README.md
  */
 'use strict';
+var config = require('./config/aws-rds-service-broker');
 
 var restify = require('restify');
 var async = require('async');
 var Handlebars = require('handlebars');
-var config = require('./config/aws-rds-service-broker');
 var aws = require('aws-sdk');
 aws.config.region = config.aws.Region;
 var rds = new aws.RDS();
@@ -534,7 +534,7 @@ function apiVersionChecker(version) {
             if (!request.headers[header].match(pattern)) {
                 console.log('Incompatible services API version: ' + request.headers[header]);
                 response.status(412);
-                response.end();
+		next(new restify.PreconditionFailedError('Incompatible services API version'));
             }
         } else {
             console.log(header + ' is missing from the request');
@@ -571,6 +571,7 @@ server.on('uncaughtException', function (req, res, route, err) {
   res.send(500, { 'code' : 500, 'description' : err.message});
 });
 
+
 checkConsistency();
 urlTemplates = compileTemplates();
 
@@ -578,3 +579,4 @@ var port = Number(process.env.VCAP_APP_PORT || 5001);
 server.listen(port, function() {
     console.log('%s listening at %s', server.name, server.url)
 });
+
