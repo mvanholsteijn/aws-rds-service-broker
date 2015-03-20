@@ -10,4 +10,3 @@ applications:
     ignores:
     - .git
     - bin
-    - leveldb
