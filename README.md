@@ -99,3 +99,8 @@ See http://docs.aws.amazon.com/AWSJavaScriptSDK/latest/AWS/RDS.html#createDBInst
 The 'DBInstanceIdentifier' is used a a prefix to generate a new dbinstance name. The suffix will be a dash, followed
 by the timestamp of creation as a hexadecimal string.
 
+# Alternatives
+
+If you do not want to create a database on AWS RDS for each service you create, but rather a schema for each user, you can configure the Stackato standard MySQL and Postgres service broker to point to a readily available RDS instance.
+
+http://docs.stackato.com/admin/cluster/external-db.html#
