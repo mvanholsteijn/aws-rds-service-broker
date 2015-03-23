@@ -1,5 +1,5 @@
 #!/bin/bash
-USAGE="Usage: list.sh [-h service-broker-url] "
+USAGE="Usage: list.sh [-h service-broker-url] [-u username] [-c password]"
 
 HOST=127.0.0.1:5001
 
@@ -7,6 +7,12 @@ while getopts ":h:" opt; do
   case $opt in
     h)
 	HOST=$OPTARG
+	;;
+    u)
+	SERVICE_BROKER_USERNAME=$OPTARG
+	;;
+    c)
+	SERVICE_BROKER_PASSWORD=$OPTARG
 	;;
     \?) 
       echo $USAGE >&2 
@@ -16,7 +22,10 @@ while getopts ":h:" opt; do
   esac
 done
 
-USER=$(jq -r ".credentials.authUser" config/aws-rds-service-broker.json)
-PWD=$(jq -r ".credentials.authPassword" config/aws-rds-service-broker.json)
+if [ -z "$SERVICE_BROKER_USERNAME" -o -z "$SERVICE_BROKER_PASSWORD" ] ; then
+	echo $USAGE >&2
+	echo ERROR: missing SERVICE_BROKER_USERNAME or SERVICE_BROKER_PASSWORD >&2
+	exit 1;
+fi
 
-curl -X GET http://$USER:$PWD@$HOST/v2/service_instances
+curl -s -H 'x-broker-api-version: 2.4' -X GET http://$SERVICE_BROKER_USERNAME:$SERVICE_BROKER_PASSWORD@$HOST/v2/service_instances

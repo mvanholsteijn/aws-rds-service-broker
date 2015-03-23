@@ -1,8 +1,4 @@
 {
-  "credentials": {
-    "authUser": "demouser",
-    "authPassword": "demopassword"
-  },
   "catalog": {
     "apiVersion": "2.3.0",
     "defaultVersion": "1.0",
@@ -72,10 +68,6 @@
         ]
       }
     ]
-  },
-  "aws": {
-    "Region": "eu-central-1",
-    "DBSubnetGroupName": "stackato-db-subnet-group"
   },
   "plans": {
     "49974401-BB86-446E-975C-9BDA0B93D444": {

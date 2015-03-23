@@ -75,6 +75,12 @@ function checkAppExists() {
 	stackato curl GET /v2/apps | grep -v ^SSL | \
 	            jq -r " .resources[] | select(.entity.name==\"$1\") | .entity.name"
 }
+
+function getAppEnv() {
+	stackato curl GET /v2/apps | grep -v ^SSL | \
+	jq -r ".resources[] | select (.entity.name = \"$1\") |  .entity.environment_json | to_entries  | .[] | [ .key, ( .value | @sh) ] | join(\"=\")"
+}
+
 function installServiceBroker() {
 
 	EXISTS=$(checkAppExists $1)
@@ -84,13 +90,16 @@ function installServiceBroker() {
 		echo "WARN: $1 is already deployed. to update, just push!"
 	fi
 
-	USER=$(jq -r ".credentials.authUser" config/$1.json )
-	PWD=$(jq -r ".credentials.authPassword" config/$1.json)
+	eval $(getAppEnv $1)
+	if [ -z "$SERVICE_BROKER_USERNAME"  -o -z "$SERVICE_BROKER_PASSWORD" ] ; then
+		echo "ERROR: variables SERVICE_BROKER_USERNAME and/or SERVICE_BROKER_PASSWORD not set on $1 " >&2
+		exit 1
+	fi
 
 	if [ -z "$(checkServiceBroker $1)"  ] ; then
 		stackato create-service-broker \
-			--username $USER \
-			--password $PWD \
+			--username $SERVICE_BROKER_USERNAME \
+			--password $SERVICE_BROKER_PASSWORD \
 			--url http://$(getFirstRoute $1) \
 			$1
 	else

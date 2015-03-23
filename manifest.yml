@@ -6,7 +6,12 @@ applications:
   env:
     AWS_ACCESS_KEY_ID: fillin
     AWS_SECRET_ACCESS_KEY: fillin
+    AWS_REGION: eu-central-1
+    AWS_DBSUBNET_GROUP_NAME: stackato-db-subnet-group
+    SERVICE_BROKER_USERNAME: demouser
+    SERVICE_BROKER_PASSWORD: demopassword
   stackato:
     ignores:
     - .git
     - bin
+    - node_modules

@@ -1,9 +1,22 @@
 #!/bin/bash
-USAGE="Usage: docurl.sh curl options"
+USAGE="Usage: docurl.sh [-u username] [-c password ] curl-options"
 
-USER=$(jq -r ".credentials.authUser" config/aws-rds-service-broker.json)
-PWD=$(jq -r ".credentials.authPassword" config/aws-rds-service-broker.json)
+while getopts "u:c:" opt; do
+  case $opt in
+    u)
+	SERVICE_BROKER_USERNAME=$OPTARG
+	;;
+    c)
+	SERVICE_BROKER_PASSWORD=$OPTARG
+	;;
+    \?) 
+      echo $USAGE >&2 
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+  esac
+done
 
-curl --user $USER:$PWD $@
+curl --user $SERVICE_BROKER_USERNAME:$SERVICE_BROKER_PASSWORD $@
 
 

@@ -16,31 +16,26 @@ This service broker was tested on Stackato.
 The catalog of services and plans is defined in the file config/aws-rds-service-broker.json.
 
 ## security
-when you create a broker, you need to specify the user name and password to use. You can specify the
-credentials in the config.
+when you create a broker in Cloud Foundy, you need to specify the user name and password to use. The credentials 
+are specified as environment variables
 
-```json
- "credentials": {
-    "authUser": "demouser",
-    "authPassword": "demopassword"
-  }
+```bash
+SERVICE_BROKER_USERNAME=demouser
+SERVICE_BROKER_PASSWORD=demopassword
 ```
-The default is set to demouser + demopassword. best changed :-)
 
 ## AWS Region and database subnet groups
-You must specify the Region and subnet group where the database instances should be created in the 'aws' section of the configuration.
-The DBSubnetGroup must be created before the broker is started.
+You must specify the Region and create a AWS RDS database subnet group in that region in which  the database instances should be created.
+These are specified by the environment variables
 
-```json
-"aws": {
-    "Region": "eu-central-1",
-    "DBSubnetGroupName": "stackato-db-subnet-group"
-  }
+```bash
+AWS_REGION=eu-central-1
+AWS_DBSUBNET_GROUP_NAME=stackato-db-subnet-group
 ```
 
 ## AWS Access keys
 Access to your AWS Acccount is obtained by specifying the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY as
-environment variables. It is best to create a separate user for the service broker. 
+environment variables. It is best to create a separate user for the service broker with limited permissions
 
 
 ## Required AWS Permissions

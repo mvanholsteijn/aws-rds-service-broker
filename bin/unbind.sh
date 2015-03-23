@@ -3,7 +3,7 @@ USAGE="Usage: unbind.sh [-h service-broker-url]  -i instance-id -b binding-id"
 
 HOST=127.0.0.1:5001
 
-while getopts ":h:i:b:" opt; do
+while getopts ":h:i:b:u:c:" opt; do
   case $opt in
     h)
 	HOST=$OPTARG
@@ -13,6 +13,12 @@ while getopts ":h:i:b:" opt; do
       ;;
     b)
 	BINDING_ID=$OPTARG
+	;;
+    u)
+	SERVICE_BROKER_USERNAME=$OPTARG
+	;;
+    c)
+	SERVICE_BROKER_PASSWORD=$OPTARG
 	;;
     \?) 
       echo $USAGE >&2 
@@ -34,10 +40,13 @@ if [ -z "$BINDING_ID" ] ; then
 	exit 1;
 fi
 
-USER=$(cat config/aws-rds-service-broker.json | jq -r ".credentials.authUser")
-PWD=$(cat config/aws-rds-service-broker.json | jq -r ".credentials.authPassword")
+if [ -z "$SERVICE_BROKER_USERNAME" -o -z "$SERVICE_BROKER_PASSWORD" ] ; then
+	echo $USAGE >&2
+	echo ERROR: missing SERVICE_BROKER_USERNAME or SERVICE_BROKER_PASSWORD >&2
+	exit 1;
+fi
 
-curl http://$USER:$PWD@$HOST/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID \
+curl -s -H 'x-broker-api-version: 2.4' http://$SERVICE_BROKER_USERNAME:$SERVICE_BROKER_PASSWORD@$HOST/v2/service_instances/$INSTANCE_ID/service_bindings/$BINDING_ID \
 	 -H "Content-Type: application/json" \
 	-X DELETE \
 	--data '{

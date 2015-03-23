@@ -19,6 +19,14 @@
 'use strict';
 var config = require('./config/aws-rds-service-broker');
 
+/* following configs are determined by environment variables */
+config.credentials = {};
+config.credentials.authUser = (process.env.SERVICE_BROKER_USERNAME || "demouser");
+config.credentials.authPassword = (process.env.SERVICE_BROKER_PASSWORD || "demopassword");
+config.aws = {};
+config.aws.Region = (process.env.AWS_REGION || "eu-central-1");
+config.aws.DBSubnetGroupName = (process.env.AWS_DBSUBNET_GROUP_NAME || "stackato-db-subnet-group");
+
 var restify = require('restify');
 var async = require('async');
 var Handlebars = require('handlebars');
@@ -527,7 +535,6 @@ function createRds(request, response, next, plan) {
 
 function apiVersionChecker(version) {
     var header = 'x-broker-api-version';
-    console.log(version);
     return function(request, response, next) {
         if (request.headers[header]) {
             var pattern = new RegExp('^' + version.major + '\\.\\d+$');
